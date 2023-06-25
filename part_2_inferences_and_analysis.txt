@@ -1,0 +1,339 @@
+Part 2: Inferences and Analysis
+
+1. Pick one city and category of your choice and group the businesses in that city or category by their overall star rating. Compare the businesses with 2-3 stars to the businesses with 4-5 stars and answer the following questions. Include your code.
+
+City: Las Vegas (the one with more reviews)
+
+Category: restaurants (the one that appears more often)
+	
+i. Do the two groups you chose to analyze have a different distribution of hours?
+
+Yes, the distribution of hours is different.
+
+SELECT CASE 
+        WHEN stars >= 4
+            THEN "4-5 stars"
+        WHEN stars >= 2
+            THEN "2-3 stars"
+        ELSE "less than 2 stars"
+        END rating
+    ,city
+    ,c.category
+    ,count(h.hours)
+FROM business
+INNER JOIN hours h ON business.id = h.business_id
+INNER JOIN category c ON business.id = c.business_id
+WHERE city = "Las Vegas"
+    AND c.category = "Restaurants"
+GROUP BY rating;
+
++-----------+-----------+-------------+----------------+
+| rating    | city      | category    | count(h.hours) |
++-----------+-----------+-------------+----------------+
+| 2-3 stars | Las Vegas | Restaurants |              7 |
+| 4-5 stars | Las Vegas | Restaurants |             14 |
++-----------+-----------+-------------+----------------+
+
+ii. Do the two groups you chose to analyze have a different number of reviews?
+        
+Yes, the group with 4-5 stars has almost 8 times more reviews than the group with 2-3 stars. 
+
+SELECT CASE 
+		WHEN stars >= 4
+			THEN "4-5 stars"
+		WHEN stars >= 2
+			THEN "2-3 stars"
+		ELSE "less than 2 stars"
+		END rating
+	,city
+	,c.category
+	,count(DISTINCT business.id) AS total_number_of_companies
+	,sum(review_count) AS total_number_of_reviews
+FROM business
+INNER JOIN category c ON business.id = c.business_id
+WHERE city = "Las Vegas"
+	AND c.category = "Restaurants"
+GROUP BY rating;
+
+
++-----------+-----------+-------------+---------------------------+-------------------------+
+| rating    | city      | category    | total_number_of_companies | total_number_of_reviews |
++-----------+-----------+-------------+---------------------------+-------------------------+
+| 2-3 stars | Las Vegas | Restaurants |                         1 |                     123 |
+| 4-5 stars | Las Vegas | Restaurants |                         3 |                     939 |
++-----------+-----------+-------------+---------------------------+-------------------------+
+
+
+         
+iii. Are you able to infer anything from the location data provided between these two groups? Explain.
+
+All the results have different postal code and (when it’s not null) also different neighborhood. All that we could infer is that the 2-3 stars restaurants are located in different places than the 4-5 ones –but also 4-5 restaurants are in different places between them.
+
+SELECT CASE 
+		WHEN stars >= 4
+			THEN "4-5 stars"
+		WHEN stars >= 2
+			THEN "2-3 stars"
+		ELSE "less than 2 stars"
+		END rating
+	,address
+	,neighborhood
+	,city
+	,postal_code
+FROM business
+INNER JOIN category c ON business.id = c.business_id
+WHERE city = "Las Vegas"
+	AND c.category = "Restaurants"
+ORDER BY rating;
+
+
+
+
++-----------+---------------------------------+--------------+-----------+-------------+
+| rating    | address                         | neighborhood | city      | postal_code |
++-----------+---------------------------------+--------------+-----------+-------------+
+| 2-3 stars | 5045 W Tropicana Ave            |              | Las Vegas | 89103       |
+| 4-5 stars | 1910 Village Center Cir, Unit 1 | Summerlin    | Las Vegas | 89134       |
+| 4-5 stars | 5040 Spring Mountain Rd         | Chinatown    | Las Vegas | 89146       |
+| 4-5 stars | 3480 S Maryland Pkwy            | Eastside     | Las Vegas | 89169       |
++-----------+---------------------------------+--------------+-----------+-------------+
+
+
+
+
+SQL code used for analysis:
+
+(i)
+
+City selected: Las Vegas (the one with more reviews)
+
+Category selected: Restaurants (the one that appears more often)
+
+
+SELECT CASE 
+		WHEN stars >= 4
+			THEN "4-5 stars"
+		WHEN stars >= 2
+			THEN "2-3 stars"
+		ELSE "less than 2 stars"
+		END rating
+	,city
+	,c.category
+	,count(h.hours)
+FROM business
+INNER JOIN hours h ON business.id = h.business_id
+INNER JOIN category c ON business.id = c.business_id
+WHERE city = "Las Vegas"
+	AND c.category = "Restaurants"
+GROUP BY rating;
+
+
+
+(ii)
+
+SELECT CASE 
+		WHEN stars >= 4
+			THEN "4-5 stars"
+		WHEN stars >= 2
+			THEN "2-3 stars"
+		ELSE "less than 2 stars"
+		END rating
+	,city
+	,c.category
+	,count(DISTINCT business.id) AS total_number_of_companies
+	,sum(review_count) AS total_number_of_reviews
+FROM business
+INNER JOIN category c ON business.id = c.business_id
+WHERE city = "Las Vegas"
+	AND c.category = "Restaurants"
+GROUP BY rating;
+
+
+
+(iii)
+
+
+SELECT CASE 
+		WHEN stars >= 4
+			THEN "4-5 stars"
+		WHEN stars >= 2
+			THEN "2-3 stars"
+		ELSE "less than 2 stars"
+		END rating
+	,address
+	,neighborhood
+	,city
+	,postal_code
+FROM business
+INNER JOIN category c ON business.id = c.business_id
+WHERE city = "Las Vegas"
+	AND c.category = "Restaurants"
+ORDER BY rating;
+
+
+		
+2. Group business based on the ones that are open and the ones that are closed. What differences can you find between the ones that are still open and the ones that are closed? List at least two differences and the SQL code you used to arrive at your answer.
+		
+i. Difference 1:
+         
+The number of open companies is bigger than the number of closed ones (more than five times more).
+
+SELECT CASE 
+		WHEN is_open = 1
+			THEN "OPEN"
+		WHEN is_open = 0
+			THEN "CLOSED"
+		END open_or_closed
+	,count(DISTINCT id) AS total_number_of_companies
+FROM business
+GROUP BY is_open
+ORDER BY open_or_closed DESC;
+
+
++----------------+---------------------------+
+| open_or_closed | total_number_of_companies |
++----------------+---------------------------+
+| OPEN           |                      8480 |
+| CLOSED         |                      1520 |
++----------------+---------------------------+
+         
+         
+ii. Difference 2:
+
+The average of reviews per company is almost 32 for open business and a little bit more than 23 for the closed ones. That is a difference of more than 36% for the business that are open.
+
+SELECT CASE 
+		WHEN is_open = 1
+			THEN "OPEN"
+		WHEN is_open = 0
+			THEN "CLOSED"
+		END open_or_closed
+	,sum(review_count) AS total_number_of_reviews
+	,round(avg(review_count), 2) AS avg_review
+	,round(avg(stars), 2) AS avg_rating
+FROM business
+GROUP BY is_open
+ORDER BY open_or_closed DESC;
+
+
+
++----------------+-------------------------+------------+------------+
+| open_or_closed | total_number_of_reviews | avg_review | avg_rating |
++----------------+-------------------------+------------+------------+
+| OPEN           |                  269300 |      31.76 |       3.68 |
+| CLOSED         |                   35261 |       23.2 |       3.52 |
++----------------+-------------------------+------------+------------+
+
+     
+         
+         
+SQL code used for analysis:
+
+Difference 1:
+
+
+SELECT CASE 
+		WHEN is_open = 1
+			THEN "OPEN"
+		WHEN is_open = 0
+			THEN "CLOSED"
+		END open_or_closed
+	,count(DISTINCT id) AS total_number_of_companies
+FROM business
+GROUP BY is_open
+ORDER BY open_or_closed DESC;
+
+
+
+Difference 2:
+
+SELECT CASE 
+		WHEN is_open = 1
+			THEN "OPEN"
+		WHEN is_open = 0
+			THEN "CLOSED"
+		END open_or_closed
+	,sum(review_count) AS total_number_of_reviews
+	,round(avg(review_count), 2) AS avg_review
+	,round(avg(stars), 2) AS avg_rating
+FROM business
+GROUP BY is_open
+ORDER BY open_or_closed DESC;
+
+
+
+
+
+	
+3. For this last part of your analysis, you are going to choose the type of analysis you want to conduct on the Yelp dataset and are going to prepare the data for analysis.
+
+Ideas for analysis include: Parsing out keywords and business attributes for sentiment analysis, clustering businesses to find commonalities or anomalies between them, predicting the overall star rating for a business, predicting the number of fans a user will have, and so on. These are just a few examples to get you started, so feel free to be creative and come up with your own problem you want to solve. Provide answers, in-line, to all of the following:
+	
+i. Indicate the type of analysis you chose to do:
+         
+I want to see which category gets the highest star rating among open business. I will also consider the number of reviews, in order to avoid some category with very little reviews: the resulting table will show only results with more reviews than the average number of reviews.
+
+
+
+ii. Write 1-2 brief paragraphs on the type of data you will need for your analysis and why you chose that data:
+
+I wil need information from the business and category tables (through an inner join): 
+
+I will need to see the open business, the categories, and for those categories the average rating and the total number of reviews they have (as long as it’s bigger than the average number of reviews). For the last two things, aggregate functions will be necessary.
+
+(Obviously, the businesses must be grouped by category).
+
+-open businesses grouped by category
+-an aggregate function that returns the average rating of the category
+-an aggregate function that returns the total number of reviews for every category (as long as the number of reviews of the category is bigger than the average number of reviews)
+
+
+The reason I chose that data is that it allows me to group the businesses by category and show both the average rating and the total number of reviews (for those with more than average).
+                           
+                  
+iii. Output of your finished dataset:
+         
++---------------------------+------------+-------------------------+
+| category                  | avg_rating | total_number_of_reviews |
++---------------------------+------------+-------------------------+
+| Hair Removal              |       4.75 |                      32 |
+| Auto Repair               |       4.63 |                     122 |
+| Automotive                |        4.5 |                     198 |
+| Caterers                  |        4.5 |                      76 |
+| Fashion                   |        4.5 |                      17 |
+| Interior Design           |        4.5 |                       7 |
+| Local Services            |       4.35 |                      94 |
+| Fitness & Instruction     |       4.33 |                      34 |
+| Korean                    |       4.25 |                      63 |
+| Dentists                  |       4.25 |                      24 |
+| Japanese                  |       4.17 |                     144 |
+| Event Planning & Services |       4.17 |                      95 |
+| Home & Garden             |       4.17 |                      18 |
+| Arcades                   |        4.0 |                     131 |
+| Sandwiches                |       3.92 |                     715 |
+| Parks                     |       3.88 |                      80 |
+| Coffee & Tea              |       3.83 |                     240 |
+| American (Traditional)    |       3.81 |                    1114 |
+| Beauty & Spas             |       3.79 |                     116 |
+| Soup                      |       3.75 |                     789 |
+| Barbeque                  |       3.75 |                     505 |
+| Diners                    |       3.75 |                     117 |
+| Dog Parks                 |       3.75 |                      19 |
+| Convenience Stores        |       3.75 |                      10 |
+| Bars                      |       3.64 |                     945 |
++---------------------------+------------+-------------------------+
+(Output limit exceeded, 25 of 38 total rows shown)
+         
+iv. Provide the SQL code you used to create your final dataset:
+
+
+SELECT c.category
+	,round(avg(b.stars), 2) AS avg_rating /* This is the average rating of the category */
+	,sum(b.review_count) AS total_number_of_reviews /* The total number of reviews of the category */
+FROM category c
+INNER JOIN business b ON c.business_id = b.id
+WHERE b.is_open = 1 /* To get results only with open business */
+GROUP BY c.category
+HAVING b.review_count > round(avg(b.review_count), 2) /* This is to get business with more reviews than the average number of reviews (in order to avoid business with a little number of reviews, wich can be less significant) */
+ORDER BY avg_rating DESC
+	,total_number_of_reviews DESC;
